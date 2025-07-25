@@ -1,28 +1,21 @@
-from flask import Flask, request, render_template
+from flask import Flask, render_template, request
 import pickle
+import numpy as np
 
-app = Flask(__name__)
 model = pickle.load(open('model.pkl', 'rb'))
 
+app = Flask(__name__)
+
 @app.route('/')
-def home():
+def index():
     return render_template('index.html')
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    try:
-        # Grab values from form
-        values = request.form.values()
-        if not all(values) or any(v.strip() == '' for v in values):
-            return render_template('index.html', prediction_text="⚠️ Please enter all values before submitting.")
+    features = [float(x) for x in request.form.values()]
+    prediction = model.predict([features])[0]
+    result = "Diabetic" if prediction == 1 else "Not Diabetic"
+    return render_template('index.html', prediction_text=f'Result: {result}')
 
-        # Convert to float and make prediction
-        features = [float(v) for v in values]
-        prediction = model.predict([features])[0]
-        result = "Diabetic" if prediction == 1 else "Not Diabetic"
-        return render_template('index.html', prediction_text=f"🩺 Result: {result}")
-    except Exception as e:
-        return render_template('index.html', prediction_text=f"⚠️ Error: {str(e)}")
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run(debug=True)
